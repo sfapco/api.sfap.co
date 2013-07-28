@@ -1,0 +1,94 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies
+ */
+
+var sfapi = require('../')
+  , program = require('commander')
+  , http = require('http')
+  , pkg = require('../package')
+  , config = require('../config')
+  , merge = require('merge')
+  , url = require('url')
+  , model = require('level-model')
+  , commands = {}
+  , error = console.error.bind(null, 'sfapi: error:')
+  , warn = console.warn.bind(null, 'sfapi: warn:')
+  , info = console.log.bind(null, 'sfapi: info:')
+
+
+program
+	.version(pkg.version)
+	.option('-D, --db [host]', "database host")
+
+
+commands.server = program.command('server')
+	.description("start the sfapi api server")
+	.option('-p, --port [port]', "port to listen on")
+	.action(function () {
+		var port, app, server, db, host
+
+
+		// port can derive from command line
+		// or fall back to `config.server.port` and
+		// if that isn't set then it will fall back to
+		// `sfap.DEFAULT_SERVER_PORT`
+		port = commands.server.port || config.server.port
+
+
+		var app = sfapi(merge(config, {
+			server: {
+				port: port
+			}
+		}));
+
+
+		// bootstrap routes
+		config.routes(app);
+
+		
+		app.use(function (req, res) {
+			res.json(404, {
+				message: "Resource not found"
+			});	
+		});
+
+
+		if (program.db) {
+			if ('string' === typeof program.db) {
+				host = url.parse(program.db).hostname
+				port = Number(url.parse(program.db).port)
+			} else {
+				port = host = '';
+			}
+
+			app.sfapdb = db = app.db({
+				host: host,
+				port: port
+			});
+
+			model.set('db', db);
+
+			require('../config/seeds')(app, done);
+		} else {
+			warn("no database provided");
+			done();
+		}
+
+
+		function done () {
+			http.createServer(app).listen(app.config.server.port);
+		}
+
+	});
+
+
+// parse argument variables
+program.parse(process.argv);
+
+
+// show usage if arguments were not provided
+if (3 > process.argv.length) {
+	program.help();
+}
