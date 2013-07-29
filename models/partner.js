@@ -15,5 +15,6 @@ module.exports = draft({
 	, contacts: [require('./contact')]
 	, website: String
 	, country: String
+	, state: String
 	, city: String
 });

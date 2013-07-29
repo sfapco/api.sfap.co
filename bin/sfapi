@@ -36,24 +36,20 @@ commands.server = program.command('server')
 		// `sfap.DEFAULT_SERVER_PORT`
 		port = commands.server.port || config.server.port
 
-
-		var app = sfapi(merge(config, {
+		app = sfapi(merge(config, {
 			server: {
 				port: port
 			}
 		}));
 
-
 		// bootstrap routes
 		config.routes(app);
-
 		
 		app.use(function (req, res) {
 			res.json(404, {
 				message: "Resource not found"
 			});	
 		});
-
 
 		if (program.db) {
 			if ('string' === typeof program.db) {
@@ -75,7 +71,6 @@ commands.server = program.command('server')
 			warn("no database provided");
 			done();
 		}
-
 
 		function done () {
 			http.createServer(app).listen(app.config.server.port);

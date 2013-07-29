@@ -36,7 +36,7 @@ module.exports = function (app) {
 			default:
 				res.json(500, {
 					messag: err.message
-				})
+				});
 		}
 	}
 
@@ -127,8 +127,17 @@ module.exports = function (app) {
 					}
 
 					if (isArray(req.body.partners)) {
-						event.partners = req.body.partners.map(function (partner) {
-							return new Partner(partner);
+						req.body.partners.map(function (partner) {
+							var contacts = partner.contacts
+							partner = new Partner(partner);
+							if (isArray(contacts)) {
+								contacts.map(function (contact) {
+									console.log(contact)
+									partner.contacts.push(new Contact(contact));
+								});
+							}
+
+							event.partners.push(partner);
 						});
 					}
 
